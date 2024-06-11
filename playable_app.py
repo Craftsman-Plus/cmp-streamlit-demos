@@ -71,7 +71,7 @@ with col1:
     st.header("User Authentication")
     email = st.text_input("Email", value=default_email)
     password = st.text_input("Password", type="password", value=default_password)
-    client_id = st.text_input("Client ID", value=default_client_id)
+    client_id = default_client_id #st.text_input("Client ID", value=default_client_id)
 
     # User Inputs for data
     st.header("Generation Data")
