@@ -13,7 +13,11 @@ default_client_id = "4djrt5jve4ud0de66i75splf7l"
 # Initialize session state for assets
 if 'assets' not in st.session_state:
     st.session_state.assets = [
-        {"id": 1, "type": "image", "urls": ["https://fastly.picsum.photos/id/839/536/354.jpg?hmac=rRPD5ORZY8xibjxZvrRUuUMfyc666vf0KQrPFOcZSJA"]}
+        {"id": 1, "type": "image", "urls": ["https://fastly.picsum.photos/id/839/536/354.jpg?hmac=rRPD5ORZY8xibjxZvrRUuUMfyc666vf0KQrPFOcZSJA"]},
+        {"id": 2, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/14/20/1715718355061-K672yLeSICW__optimized.webp"
+,"https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/24/21/1716584971517-FunhnzEwM8U__optimized.webp"]},
+        {"id": 3, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/CRAFTSMAN/2023/11/27/12/1701087042485-uMqAGSq44Qk__optimized.webp"]},
+        {"id": 4, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/CRAFTSMAN/2024/01/23/12/1706012086458-RHCTYkh6HZp__optimized.webp"]}
     ]
 
 # Function to authenticate and get token
