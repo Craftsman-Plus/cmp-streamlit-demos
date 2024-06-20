@@ -197,8 +197,8 @@ with result_tab:
                         st.error("Generation failed!")
                         break
                     else:
-                        st.session_state.progress = status_response.get('progress', 0) / 100
-                        progress_bar.progress(st.session_state.progress)
+                        st.session_state.progress = int(status_response.get('progress', 0)) / 100
+                        progress_bar.progress(int(st.session_state.progress))
                         time.sleep(2)
                         st.rerun()
         if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
