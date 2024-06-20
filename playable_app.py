@@ -192,7 +192,7 @@ with result_tab:
                         result_data = download_result(location)
                         if result_data:
                             st.session_state.result_data = result_data
-                            break
+                            st.rerun()
                     elif phase == 'FAILED':
                         st.error("Generation failed!")
                         break
