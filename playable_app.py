@@ -97,7 +97,7 @@ with auth_tab:
                 st.error("Authentication failed. Please check your credentials.")
         else:
             st.error("Please fill all the fields!")
-
+import uuid
 with gen_tab:
     st.header("Generation Data")
     theme = st.text_input("Theme", value=st.session_state.get('theme', """
@@ -105,7 +105,7 @@ I am creating a playable about a company called Craftsman+. It is set in a dysto
 """))
 
     if st.button("Add Asset"):
-        st.session_state.assets.append({"id": len(st.session_state.assets) + 1, "type": "image", "urls": [""]})
+        st.session_state.assets.append({"id": uuid.uuid1(), "type": "image", "urls": [""]})
 
     if st.button("Remove Last Asset") and len(st.session_state.assets) > 1:
         st.session_state.assets.pop()
