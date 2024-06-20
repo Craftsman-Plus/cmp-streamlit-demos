@@ -14,11 +14,11 @@ default_client_id = "4djrt5jve4ud0de66i75splf7l"
 # Initialize session state for assets
 if 'assets' not in st.session_state:
     st.session_state.assets = [
-        {"id": 123, "type": "image", "urls": ["https://fastly.picsum.photos/id/839/536/354.jpg?hmac=rRPD5ORZY8xibjxZvrRUuUMfyc666vf0KQrPFOcZSJA"]},
-        {"id": 243, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/14/20/1715718355061-K672yLeSICW__optimized.webp",
+        {"id": fdsj2, "type": "image", "urls": ["https://fastly.picsum.photos/id/839/536/354.jpg?hmac=rRPD5ORZY8xibjxZvrRUuUMfyc666vf0KQrPFOcZSJA"]},
+        {"id": dj3fd, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/14/20/1715718355061-K672yLeSICW__optimized.webp",
             "https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/24/21/1716584971517-FunhnzEwM8U__optimized.webp"]},
-        {"id": 543, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/CRAFTSMAN/2023/11/27/12/1701087042485-uMqAGSq44Qk__optimized.webp"]},
-        {"id": 443, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/CRAFTSMAN/2024/01/23/12/1706012086458-RHCTYkh6HZp__optimized.webp"]}
+        {"id": fdskf, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/CRAFTSMAN/2023/11/27/12/1701087042485-uMqAGSq44Qk__optimized.webp"]},
+        {"id": zcvas, "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/CRAFTSMAN/2024/01/23/12/1706012086458-RHCTYkh6HZp__optimized.webp"]}
     ]
 
 # Function to authenticate and get token
@@ -92,7 +92,7 @@ with auth_tab:
                 st.success("Authenticated successfully!")
                 st.session_state.token = token
                 st.session_state.is_authenticated = True
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Authentication failed. Please check your credentials.")
         else:
@@ -132,16 +132,17 @@ I am creating a playable about a company called Craftsman+. It is set in a dysto
                     if st.button(f"Remove URL {url_idx + 1}", key=f"remove_{idx}_{url_idx}"):
                         st.write(f"length of asset {idx} is {len(st.session_state.assets[idx]['urls'])}, removing url at index {url_idx}")
                         del st.session_state.assets[idx]['urls'][url_idx]
-                        st.experimental_rerun()
+                        st.rerun()
 
             new_url = st.text_input(f"New URL for Asset {idx + 1}", value="", key=f"new_url_{idx}")
             if st.button(f"Add URL to Asset {idx + 1}", key=f"add_url_{idx}"):
                 if new_url:
                     st.session_state.assets[idx]['urls'].append(new_url)
-                    st.experimental_rerun()
+                    st.rerun()
 
     # Main focus button for generation
     if st.button("Generate Playable Content"):
+        st.write("Please go to 'RESULTS' tab to check the status of the generation process.")
         if 'token' in st.session_state and theme:
             st.session_state.theme = theme
             data = {
@@ -158,7 +159,7 @@ I am creating a playable about a company called Craftsman+. It is set in a dysto
                     st.session_state.location = location
                     st.session_state.progress = 0
                     st.session_state.phase = "IN_PROGRESS"
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Failed to retrieve job ID or location URL.")
             else:
@@ -198,21 +199,31 @@ with result_tab:
                     else:
                         st.session_state.progress = status_response.get('progress', 0) / 100
                         progress_bar.progress(st.session_state.progress)
-                        time.sleep(5)
-                        st.experimental_rerun()
-        elif st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
+                        time.sleep(2)
+                        st.rerun()
+        if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
             result_data = st.session_state.result_data
             st.subheader("Theme")
-            st.write(result_data['theme'])
-            st.subheader("Assets")
+            st.info(result_data['theme'])
             for asset in result_data['assets']:
-                st.write(f"Category: {asset['category']}")
-                st.write(f"Description: {asset['description']}")
-                st.write(f"Style: {asset['style']}")
+                st.header(f"Asset {asset['id']}")
+                st.text("Category")
+                st.info(f"{asset['category']}")
+                st.text("Description")
+                st.info(f"{asset['description']}")
+                st.text("Style")
+                st.info(f"{asset['style']}")
                 for result in asset['results']:
-                    st.write(f"Prompt: {result['prompt']['asset_prompt']}")
-                    for url in result['urls']:
-                        st.image(url, caption=result['prompt']['asset_prompt'])
+                    cols_result = st.columns([1, 1])
+                    st.text("Result")
+                    with cols_result[0]:
+                        st.info(f"{result['prompt']['asset_prompt']}")
+                    with cols_result[1]:
+                        for url in result['urls']:
+                            st.image(url, width=400)
+                st.divider()
             st.subheader("Cost")
             st.write(f"Total Cost: {result_data['cost']['totalCost']} {result_data['cost']['currency']}")
             st.json(result_data['cost']['costBreakdown'])
+            st.subheader("JSON Results")
+            st.json(result_data)
