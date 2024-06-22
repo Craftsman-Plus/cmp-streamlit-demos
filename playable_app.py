@@ -103,6 +103,10 @@ with gen_tab:
     theme = st.text_input("Theme", value=st.session_state.get('theme', """
 I am creating a playable about a company called Craftsman+. It is set in a dystopian sci-fi environment where advertising rules the world.
 """))
+    
+    style = st.text_input("style", value=st.session_state.get('style', """
+cartoon
+"""))
 
     if st.button("Add Asset"):
         st.session_state.assets.append({"id": uuid.uuid1(), "type": "image", "urls": [""]})
@@ -143,11 +147,13 @@ I am creating a playable about a company called Craftsman+. It is set in a dysto
     # Main focus button for generation
     if st.button("Generate Playable Content"):
         st.write("Please go to 'RESULTS' tab to check the status of the generation process.")
-        if 'token' in st.session_state and theme:
+        if 'token' in st.session_state and theme and style:
             st.session_state.theme = theme
+            st.session_state.style = style
             data = {
                 "theme": theme,
-                "assets": st.session_state.assets
+                "assets": st.session_state.assets,
+                "style": style
             }
             generation_response = start_generation(st.session_state.token, data)
             if generation_response:
@@ -165,7 +171,7 @@ I am creating a playable about a company called Craftsman+. It is set in a dysto
             else:
                 st.error("Failed to start generation process.")
         else:
-            st.error("Please authenticate and fill in the theme!")
+            st.error("Please authenticate and fill in the theme and style!")
 
 # Results tab
 with result_tab:
@@ -204,6 +210,8 @@ with result_tab:
         if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
             result_data = st.session_state.result_data
             st.subheader("Theme")
+            st.info(result_data['theme'])
+            st.subheader("Style")
             st.info(result_data['theme'])
             for asset in result_data['assets']:
                 st.header(f"Asset {asset['id']}")
