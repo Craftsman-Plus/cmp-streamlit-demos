@@ -212,7 +212,7 @@ with result_tab:
             st.subheader("Theme")
             st.info(result_data['theme'])
             st.subheader("Style")
-            st.info(result_data['theme'])
+            st.info(result_data['style'])
             for asset in result_data['assets']:
                 st.header(f"Asset {asset['id']}")
                 st.text("Category")
