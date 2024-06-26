@@ -100,8 +100,13 @@ with auth_tab:
 import uuid
 with gen_tab:
     st.header("Generation Data")
-    theme = st.text_input("Theme", value=st.session_state.get('theme', "wild west"))
-    style = st.text_input("style", value=st.session_state.get('style', "cartoon"))
+    theme = st.text_input("Theme", value=st.session_state.get('theme', """
+wild west
+"""))
+
+    style = st.text_input("style", value=st.session_state.get('style', """
+cartoon
+"""))
 
     # Dynamic Asset Management
     st.header("Assets")
