@@ -110,11 +110,11 @@ cartoon
 
     # Dynamic Asset Management
     st.header("Assets")
-    input_json = st.text_area("Assets JSON", value=st.session_state.get('assets', []))
+    input_json = st.text_area("Assets JSON", value=json.dumps(st.session_state.get('assets', [])))
     
     data = {
         "theme": theme,
-        "assets": json.loads(json.dumps(input_json)),
+        "assets": input_json,
         "style": style
     }
     
