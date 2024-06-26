@@ -100,50 +100,13 @@ with auth_tab:
 import uuid
 with gen_tab:
     st.header("Generation Data")
-    theme = st.text_input("Theme", value=st.session_state.get('theme', """
-I am creating a playable about a company called Craftsman+. It is set in a dystopian sci-fi environment where advertising rules the world.
-"""))
-    
-    style = st.text_input("style", value=st.session_state.get('style', """
-cartoon
-"""))
-
-    if st.button("Add Asset"):
-        st.session_state.assets.append({"id": uuid.uuid1(), "type": "image", "urls": [""]})
-
-    if st.button("Remove Last Asset") and len(st.session_state.assets) > 1:
-        st.session_state.assets.pop()
+    theme = st.text_input("Theme", value=st.session_state.get('theme', "wild west"))
+    style = st.text_input("style", value=st.session_state.get('style', "cartoon"))
 
     # Dynamic Asset Management
     st.header("Assets")
-    for idx, asset in enumerate(st.session_state.assets):
-        with st.expander(f"Asset {idx + 1}"):
-            asset['type'] = st.text_input(f"Asset {idx + 1} Type", value=asset['type'], key=f"type_{idx}")
-            st.write("URLs:")
-            if f"new_url_{idx}" not in st.session_state:
-                st.session_state[f"new_url_{idx}"] = ""
-            urls_to_remove = []
-            for url_idx, url in enumerate(asset['urls']):
-                cols = st.columns([1, 6, 1])
-                with cols[0]:
-                    if url != "":
-                        st.image(url, width=200)
-                    else:
-                        st.write("No image")
-                with cols[1]:
-                    st.text_input(f"Asset {idx + 1} URL {url_idx + 1}", value=url, key=f"url_{idx}_{url_idx}")
-                with cols[2]:
-                    if st.button(f"Remove URL {url_idx + 1}", key=f"remove_{idx}_{url_idx}"):
-                        st.write(f"length of asset {idx} is {len(st.session_state.assets[idx]['urls'])}, removing url at index {url_idx}")
-                        del st.session_state.assets[idx]['urls'][url_idx]
-                        st.rerun()
-
-            new_url = st.text_input(f"New URL for Asset {idx + 1}", value="", key=f"new_url_{idx}")
-            if st.button(f"Add URL to Asset {idx + 1}", key=f"add_url_{idx}"):
-                if new_url:
-                    st.session_state.assets[idx]['urls'].append(new_url)
-                    st.rerun()
-
+    input_json = st.text_area("Assets JSON", value=st.session_state.assets)
+        
     # Main focus button for generation
     if st.button("Generate Playable Content"):
         st.write("Please go to 'RESULTS' tab to check the status of the generation process.")
@@ -152,7 +115,7 @@ cartoon
             st.session_state.style = style
             data = {
                 "theme": theme,
-                "assets": st.session_state.assets,
+                "assets": json.dumps(input_json),
                 "style": style
             }
             generation_response = start_generation(st.session_state.token, data)
