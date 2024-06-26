@@ -110,7 +110,7 @@ cartoon
 
     # Dynamic Asset Management
     st.header("Assets")
-    st.session_state.assets = st.text_area("Assets JSON", value=st.session_state.get('assets', []))
+    input_json = st.text_area("Assets JSON", value=st.session_state.get('assets', []))
         
     # Main focus button for generation
     if st.button("Generate Playable Content"):
@@ -118,11 +118,14 @@ cartoon
         if 'token' in st.session_state and theme and style:
             st.session_state.theme = theme
             st.session_state.style = style
+            st.session_state.assets = input_json
+            
             data = {
                 "theme": theme,
-                "assets": json.dumps(st.session_state.assets),
+                "assets": json.dumps(input_json),
                 "style": style
             }
+            os.write(1,data)
             generation_response = start_generation(st.session_state.token, data)
             if generation_response:
                 st.success("Generated Job ID!")
