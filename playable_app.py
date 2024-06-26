@@ -3,7 +3,6 @@ import time
 import requests
 from authenticate import authenticate_and_get_token
 import json
-import os
 
 st.set_page_config(layout="wide")
 
@@ -112,7 +111,9 @@ cartoon
     # Dynamic Asset Management
     st.header("Assets")
     input_json = st.text_area("Assets JSON", value=st.session_state.get('assets', []))
-        
+    
+    st.json(input_json)
+
     # Main focus button for generation
     if st.button("Generate Playable Content"):
         st.write("Please go to 'RESULTS' tab to check the status of the generation process.")
@@ -126,7 +127,6 @@ cartoon
                 "assets": json.dumps(input_json),
                 "style": style
             }
-            os.write(1,data)
             generation_response = start_generation(st.session_state.token, data)
             if generation_response:
                 st.success("Generated Job ID!")
