@@ -108,11 +108,13 @@ wild west
 cartoon
 """))
 
-    st.json(st.session_state.get('assets', "[]"))
+    input_value = ''
+    if 'assets' in st.session_state:
+        input_value = st.session_state.get('assets')
 
     # Dynamic Asset Management
     st.header("Assets")
-    input_json = st.text_area("Assets JSON", value=st.session_state.get('assets', "[]").replace("'", '"'))
+    input_json = st.text_area("Assets JSON", value=input_value.replace("'", '"'))
     
     data = {
         "theme": theme,
