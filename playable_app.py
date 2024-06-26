@@ -114,7 +114,7 @@ cartoon
     
     data = {
         "theme": theme,
-        "assets": json.load(input_json),
+        "assets": json.load(st.session_state.get('assets', "[]")),
         "style": style
     }
     
