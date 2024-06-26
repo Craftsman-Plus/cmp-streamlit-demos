@@ -105,7 +105,7 @@ with gen_tab:
 
     # Dynamic Asset Management
     st.header("Assets")
-    input_json = st.text_area("Assets JSON", value=st.session_state.assets)
+    input_json = st.text_area("Assets JSON", value=st.session_state.get('assets', []))
         
     # Main focus button for generation
     if st.button("Generate Playable Content"):
@@ -115,7 +115,7 @@ with gen_tab:
             st.session_state.style = style
             data = {
                 "theme": theme,
-                "assets": json.dumps(input_json),
+                "assets": json.dump(input_json),
                 "style": style
             }
             generation_response = start_generation(st.session_state.token, data)
