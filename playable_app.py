@@ -114,7 +114,7 @@ cartoon
     
     data = {
         "theme": theme,
-        "assets": json.loads(input_json),
+        "assets": json.load(input_json),
         "style": style
     }
     
