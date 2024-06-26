@@ -215,17 +215,11 @@ with result_tab:
             st.info(result_data['style'])
             for asset in result_data['assets']:
                 st.header(f"Asset {asset['id']}")
-                st.text("Category")
-                st.info(f"{asset['category']}")
-                st.text("Description")
-                st.info(f"{asset['description']}")
-                st.text("Style")
-                st.info(f"{asset['style']}")
                 for result in asset['results']:
                     cols_result = st.columns([1, 1])
                     st.text("Result")
                     with cols_result[0]:
-                        st.info(f"{result['prompt']['asset_prompt']}")
+                        st.info(f"{result['prompt']}")
                     with cols_result[1]:
                         for url in result['urls']:
                             st.image(url, width=400)
