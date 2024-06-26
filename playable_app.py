@@ -114,12 +114,10 @@ cartoon
     
     data = {
         "theme": theme,
-        "assets": input_json,
+        "assets": json.loads(input_json),
         "style": style
     }
     
-    st.json(data)
-
     # Main focus button for generation
     if st.button("Generate Playable Content"):
         st.write("Please go to 'RESULTS' tab to check the status of the generation process.")
@@ -145,6 +143,8 @@ cartoon
                 st.error("Failed to start generation process.")
         else:
             st.error("Please authenticate and fill in the theme and style!")
+            
+    st.json(data)
 
 # Results tab
 with result_tab:
