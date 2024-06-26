@@ -115,7 +115,7 @@ with gen_tab:
             st.session_state.style = style
             data = {
                 "theme": theme,
-                "assets": json.dump(input_json),
+                "assets": input_json,
                 "style": style
             }
             generation_response = start_generation(st.session_state.token, data)
