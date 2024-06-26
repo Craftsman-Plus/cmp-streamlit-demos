@@ -196,7 +196,8 @@ with result_tab:
                     cols_result = st.columns([1, 1])
                     st.text("Result")
                     with cols_result[0]:
-                        st.info(f"{result['prompt']}")
+                        if "prompt" in result:
+                            st.info(f"{result['prompt']}")
                     with cols_result[1]:
                         for url in result['urls']:
                             st.image(url, width=400)
