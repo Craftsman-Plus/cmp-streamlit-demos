@@ -112,7 +112,13 @@ cartoon
     st.header("Assets")
     input_json = st.text_area("Assets JSON", value=st.session_state.get('assets', []))
     
-    st.json(input_json)
+    data = {
+        "theme": theme,
+        "assets": json.dumps(input_json),
+        "style": style
+    }
+    
+    st.json(data)
 
     # Main focus button for generation
     if st.button("Generate Playable Content"):
@@ -122,11 +128,6 @@ cartoon
             st.session_state.style = style
             st.session_state.assets = input_json
             
-            data = {
-                "theme": theme,
-                "assets": json.dumps(input_json),
-                "style": style
-            }
             generation_response = start_generation(st.session_state.token, data)
             if generation_response:
                 st.success("Generated Job ID!")
