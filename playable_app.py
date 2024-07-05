@@ -28,6 +28,17 @@ def get_token(email, password, client_id):
     except Exception as e:
         st.error(f"Error during authentication: {e}")
         return None
+    
+# Function to query the cost
+def query_cost(token, params):
+    try:
+        url = 'https://ai.dev.craftsmanplus.com/api/cost'
+        response = requests.get(url, headers={"Authorization": token}, params=params)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Error querying cost: {e}")
+        return None
 
 # Function to start the generation process
 def start_generation(token, data):
@@ -74,7 +85,7 @@ st.markdown(f"<p style='font-size: 16px; color: {'green' if is_authenticated els
 st.title("Playable Content Generator")
 
 # Create three tabs for authentication, generation data, and results
-auth_tab, gen_tab, result_tab = st.tabs(["Authentication", "Generation Data", "Results"])
+auth_tab, gen_tab, result_tab, cost_tab = st.tabs(["Authentication", "Generation Data", "Results", "Query Cost"])
 
 with auth_tab:
     st.header("User Authentication")
@@ -208,3 +219,39 @@ with result_tab:
             st.json(result_data['cost']['costBreakdown'])
             st.subheader("JSON Results")
             st.json(result_data)
+
+# Query Cost tab
+with cost_tab:
+    st.header("Query Cost")
+    with st.form(key='cost_query_form'):
+        username = st.text_input("(Optional, Will Use Authenticated User ID if None) Username")
+        with st.container(border=True):
+            start_date = st.text_input("(Optional) Start Date (YYYY-MM-DD)")
+            end_date = st.text_input("(Optional) End Date (YYYY-MM-DD)")
+        st.text("OR")
+        with st.container(border=True):
+            year_month = st.text_input("(Optional) Year and Month (YYYY-MM)")
+
+        submit_cost_query = st.form_submit_button("Query Cost")
+
+    if submit_cost_query:
+        if 'token' in st.session_state:
+            params = {}
+            if username:
+                params['username'] = username
+            if start_date:
+                params['start_date'] = start_date
+            if end_date:
+                params['end_date'] = end_date
+            if year_month:
+                params['year_month'] = year_month
+
+            with st.spinner('Querying cost...'):
+                cost_response = query_cost(st.session_state.token, params)
+            if cost_response:
+                st.success("Query successful!")
+                st.json(cost_response)
+            else:
+                st.error("Failed to query cost.")
+        else:
+            st.error("Please authenticate first.")
