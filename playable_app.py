@@ -174,6 +174,8 @@ with result_tab:
                     if phase == 'COMPLETED':
                         st.success("Generation completed!")
                         result_data = download_result(location)
+                        st.session_state.progress = int(float(status_response.get('progress', 0)))
+                        progress_bar.progress(st.session_state.progress)
                         if result_data:
                             st.session_state.result_data = result_data
                             st.rerun()
