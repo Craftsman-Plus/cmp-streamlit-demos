@@ -165,6 +165,7 @@ with result_tab:
         if st.session_state.phase == "IN_PROGRESS":
             while True:
                 status_response = check_status(token, job_id)
+                print(status_response)
                 if status_response:
                     phase = status_response.get('phase')
                     message = status_response.get('message')
@@ -180,8 +181,8 @@ with result_tab:
                         st.error("Generation failed!")
                         break
                     else:
-                        st.session_state.progress = int(status_response.get('progress', 0)) / 100
-                        progress_bar.progress(int(st.session_state.progress))
+                        st.session_state.progress = int(float(status_response.get('progress', 0)))
+                        progress_bar.progress(st.session_state.progress)
                         time.sleep(2)
                         st.rerun()
         if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
