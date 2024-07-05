@@ -171,11 +171,11 @@ with result_tab:
                     message = status_response.get('message')
                     status_placeholder.write(f"Phase: {phase}\nMessage: {message}")
                     st.session_state.phase = phase
+                    st.session_state.progress = int(float(status_response.get('progress', 0)))
+                    progress_bar.progress(st.session_state.progress)
                     if phase == 'COMPLETED':
                         st.success("Generation completed!")
                         result_data = download_result(location)
-                        st.session_state.progress = int(float(status_response.get('progress', 0)))
-                        progress_bar.progress(st.session_state.progress)
                         if result_data:
                             st.session_state.result_data = result_data
                             st.rerun()
@@ -183,8 +183,6 @@ with result_tab:
                         st.error("Generation failed!")
                         break
                     else:
-                        st.session_state.progress = int(float(status_response.get('progress', 0)))
-                        progress_bar.progress(st.session_state.progress)
                         time.sleep(2)
                         st.rerun()
         if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
