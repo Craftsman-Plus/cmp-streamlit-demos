@@ -114,7 +114,7 @@ with gen_tab:
     data = {
         "template": template,
         "theme": theme,
-        "assets": st.session_state.assets,
+        # "assets": st.session_state.assets,
         "style": style
     }
     
