@@ -13,13 +13,7 @@ default_client_id = "4djrt5jve4ud0de66i75splf7l"
 
 # Initialize session state for assets
 if 'assets' not in st.session_state:
-    st.session_state.assets = [
-        {"id": "fdsj2", "type": "image", "urls": ["https://fastly.picsum.photos/id/839/536/354.jpg?hmac=rRPD5ORZY8xibjxZvrRUuUMfyc666vf0KQrPFOcZSJA"]},
-        {"id": "dj3fd", "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/14/20/1715718355061-K672yLeSICW__optimized.webp",
-            "https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/wxCzTlJhNPU/2024/05/24/21/1716584971517-FunhnzEwM8U__optimized.webp"]},
-        {"id": "fdskf", "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/CRAFTSMAN/2023/11/27/12/1701087042485-uMqAGSq44Qk__optimized.webp"]},
-        {"id": "zcvas", "type": "image", "urls": ["https://endpoints.prod.craftsmanplus.com/assets/studio/optimized/CRAFTSMAN/2024/01/23/12/1706012086458-RHCTYkh6HZp__optimized.webp"]}
-    ]
+    st.session_state.assets = []
 
 # Function to authenticate and get token
 def get_token(email, password, client_id):
@@ -44,8 +38,6 @@ def query_cost(token, params):
 def start_generation(token, data):
     try:
         url = 'https://ai.dev.craftsmanplus.com/api/playable/generate'
-        for asset in data['assets']:
-            asset['id'] = str(asset['id'])
         response = requests.post(url, headers={"Authorization": token}, allow_redirects=False, json=data)
         response.raise_for_status()
         return response.json()
@@ -108,28 +100,21 @@ with auth_tab:
                 st.error("Authentication failed. Please check your credentials.")
         else:
             st.error("Please fill all the fields!")
-import uuid
+
 with gen_tab:
     st.header("Generation Data")
-    theme = st.text_input("Theme", value=st.session_state.get('theme', """
-wild west
-"""))
-
-    style = st.text_input("style", value=st.session_state.get('style', """
-cartoon
-"""))
-
-    input_value = ''
-    if 'assets' in st.session_state:
-        input_value = st.session_state.get('assets')
-
-    # Dynamic Asset Management
-    st.header("Assets")
-    input_json = st.text_area("Assets JSON", value=input_value)
     
+    # Dropdown for template selection
+    template = st.selectbox("Select Template", ["puzzle", "memory", "item catcher", "item slicer", "claw"])
+    theme = st.text_input("Theme", value=st.session_state.get('theme', "wild west"))
+    
+    # Dropdown for style selection
+    style = st.selectbox("Style", ["cartoon"])
+
     data = {
+        "template": template,
         "theme": theme,
-        "assets": json.loads(input_json.replace("'", '"')),
+        "assets": st.session_state.assets,
         "style": style
     }
     
@@ -139,7 +124,6 @@ cartoon
         if 'token' in st.session_state and theme and style:
             st.session_state.theme = theme
             st.session_state.style = style
-            st.session_state.assets = input_json
             
             generation_response = start_generation(st.session_state.token, data)
             if generation_response:
@@ -176,7 +160,6 @@ with result_tab:
         if st.session_state.phase == "IN_PROGRESS":
             while True:
                 status_response = check_status(token, job_id)
-                print(status_response)
                 if status_response:
                     phase = status_response.get('phase')
                     message = status_response.get('message')
