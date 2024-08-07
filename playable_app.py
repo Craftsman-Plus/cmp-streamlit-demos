@@ -22,7 +22,7 @@ def get_token(email, password, client_id):
     except Exception as e:
         st.error(f"Error during authentication: {e}")
         return None
-    
+
 # Function to query the cost
 def query_cost(token, params):
     try:
@@ -35,9 +35,9 @@ def query_cost(token, params):
         return None
 
 # Function to start the generation process
-def start_generation(token, data):
+def start_generation(token, data, endpoint):
     try:
-        url = 'https://ai.dev.craftsmanplus.com/api/playable/generate'
+        url = f'https://ai.dev.craftsmanplus.com/api/{endpoint}'
         response = requests.post(url, headers={"Authorization": token}, allow_redirects=False, json=data)
         response.raise_for_status()
         return response.json()
@@ -66,6 +66,10 @@ def download_result(url):
         st.error(f"Error downloading result: {e}")
         return None
 
+# Sidebar menu
+st.sidebar.title("Menu")
+menu_option = st.sidebar.selectbox("Select an option", ["Home", "Playable Content Generator", "Variation Generator"])
+
 # Check authentication status
 is_authenticated = st.session_state.get('is_authenticated', False)
 
@@ -74,12 +78,9 @@ status_text = "Authenticated ✔️" if is_authenticated else "Not Authenticated
 st.markdown(f"<p style='font-size: 16px; color: {'green' if is_authenticated else 'red'}'>{status_text}</p>", unsafe_allow_html=True)
 
 # Streamlit UI
-st.title("Playable Content Generator")
+st.title("Content Generator")
 
-# Create three tabs for authentication, generation data, and results
-auth_tab, gen_tab, result_tab, cost_tab = st.tabs(["Authentication", "Generation Data", "Results", "Query Cost"])
-
-with auth_tab:
+if menu_option == "Home":
     st.header("User Authentication")
     with st.form(key='auth_form'):
         email = st.text_input("Email", value=default_email)
@@ -101,7 +102,8 @@ with auth_tab:
         else:
             st.error("Please fill all the fields!")
 
-with gen_tab:
+elif menu_option == "Playable Content Generator":
+    # Generation Data section
     st.header("Generation Data")
     
     # Dropdown for template selection
@@ -114,18 +116,17 @@ with gen_tab:
     data = {
         "template": template,
         "theme": theme,
-        # "assets": st.session_state.assets,
         "style": style
     }
     
     # Main focus button for generation
     if st.button("Generate Playable Content"):
-        st.write("Please go to 'RESULTS' tab to check the status of the generation process.")
+        st.write("Please check the status in the Results tab.")
         if 'token' in st.session_state and theme and style:
             st.session_state.theme = theme
             st.session_state.style = style
             
-            generation_response = start_generation(st.session_state.token, data)
+            generation_response = start_generation(st.session_state.token, data, "playable/generate")
             if generation_response:
                 st.success("Generated Job ID!")
                 job_id = generation_response.get('id')
@@ -142,69 +143,98 @@ with gen_tab:
                 st.error("Failed to start generation process.")
         else:
             st.error("Please authenticate and fill in the theme and style!")
-            
+
     st.json(data)
 
-# Results tab
-with result_tab:
-    if 'job_id' in st.session_state:
-        st.header("Generation Results")
-        job_id = st.session_state.job_id
-        location = st.session_state.location
-        token = st.session_state.token
+elif menu_option == "Variation Generator":
+    st.header("Variation Generator")
+    
+    # Input fields for variation generation
+    image_url = st.text_input("Image URL", "https://cdn.cloud.scenario.com/assets-transform/asset_NSnpm8HMwP42rz2HeSEDsjJf?Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jZG4uY2xvdWQuc2NlbmFyaW8uY29tL2Fzc2V0cy10cmFuc2Zvcm0vYXNzZXRfTlNucG04SE13UDQycnoySGVTRURzakpmPyoiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3MjM2Nzk5OTl9fX1dfQ__&Key-Pair-Id=K36FIAB9LE2OLR&Signature=vAHQf-wPgc0qNFNnR19ScWP1IoA6ts6n4AKjGdZcx~j0RgJi8GJ7jYRL9i4KZ00CRVNXHyMG1gdyTj-9~Idap3Djacbdkvn97b4iB6dbhFEbxuYPH2K3azcZODevvW2jL6CbcbEd2NSRutqo-pcvKDZNomGnU41WQHiDB8HWErylAODLO2Rcykiieb6Erh5oFwChnGJC90Gb~TqJWlKWCyuqttkXiT2OhlEYq46bh4zFMUs2sxQcV99wXG7mLInfyrjcmiWYejyeQn7oHXs7OHP5-ic9mz5Mej0Koiwz9zE~~k4QRhD9jlLAdNoi-R8fSAtunXlCNizK4tldyZm56g__&quality=80&format=jpeg&width=512")
+    if image_url:
+        st.image(image_url, width=200)
+    prompt = st.text_input("Text Prompt", "rabbit")
+    reference_urls = st.text_area("Reference Image URLs (comma-separated)", "").split(',')
 
-        # Check the status with a progress bar
-        progress_bar = st.progress(st.session_state.get('progress', 0))
-        status_placeholder = st.empty()
-        
-        if st.session_state.phase == "IN_PROGRESS":
-            while True:
-                status_response = check_status(token, job_id)
-                if status_response:
-                    phase = status_response.get('phase')
-                    message = status_response.get('message')
-                    status_placeholder.write(f"Phase: {phase}\nMessage: {message}")
-                    st.session_state.phase = phase
-                    st.session_state.progress = int(float(status_response.get('progress', 0)))
-                    progress_bar.progress(st.session_state.progress)
-                    if phase == 'COMPLETED':
-                        st.success("Generation completed!")
-                        result_data = download_result(location)
-                        if result_data:
-                            st.session_state.result_data = result_data
-                            st.rerun()
-                    elif phase == 'FAILED':
-                        st.error("Generation failed!")
-                        break
-                    else:
-                        time.sleep(2)
+    if st.button("Generate Variation"):
+        if 'token' in st.session_state and image_url and prompt:
+            data = {
+                "image": image_url,
+                "prompt": prompt,
+                "reference_images": [url.strip() for url in reference_urls if url.strip()]
+            }
+            variation_response = start_generation(st.session_state.token, data, "images/variation")
+            if variation_response:
+                st.success("Variation generation started!")
+                image_url = variation_response.get('image')  # Get the image URL from the response
+                if image_url:
+                    st.image(image_url, caption="Generated Variation", width=500)  # Display the image
+                else:
+                    st.error("Failed to retrieve image URL.")
+            else:
+                st.error("Failed to start variation generation process.")
+        else:
+            st.error("Please authenticate and fill in all fields!")
+
+# Results tab
+if 'job_id' in st.session_state:
+    st.header("Generation Results")
+    job_id = st.session_state.job_id
+    location = st.session_state.location
+    token = st.session_state.token
+
+    # Check the status with a progress bar
+    progress_bar = st.progress(st.session_state.get('progress', 0))
+    status_placeholder = st.empty()
+    
+    if st.session_state.phase == "IN_PROGRESS":
+        while True:
+            status_response = check_status(token, job_id)
+            if status_response:
+                phase = status_response.get('phase')
+                message = status_response.get('message')
+                status_placeholder.write(f"Phase: {phase}\nMessage: {message}")
+                st.session_state.phase = phase
+                st.session_state.progress = int(float(status_response.get('progress', 0)))
+                progress_bar.progress(st.session_state.progress)
+                if phase == 'COMPLETED':
+                    st.success("Generation completed!")
+                    result_data = download_result(location)
+                    if result_data:
+                        st.session_state.result_data = result_data
                         st.rerun()
-        if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
-            result_data = st.session_state.result_data
-            st.subheader("Theme")
-            st.info(result_data['theme'])
-            st.subheader("Style")
-            st.info(result_data['style'])
-            for asset in result_data['assets']:
-                st.header(f"Asset {asset['id']}")
-                for result in asset['results']:
-                    cols_result = st.columns([1, 1])
-                    st.text("Result")
-                    with cols_result[0]:
-                        if "prompt" in result:
-                            st.info(f"{result['prompt']}")
-                    with cols_result[1]:
-                        for url in result['urls']:
-                            st.image(url, width=400)
-                st.divider()
-            st.subheader("Cost")
-            st.write(f"Total Cost: {result_data['cost']['totalCost']} {result_data['cost']['currency']}")
-            st.json(result_data['cost']['costBreakdown'])
-            st.subheader("JSON Results")
-            st.json(result_data)
+                elif phase == 'FAILED':
+                    st.error("Generation failed!")
+                    break
+                else:
+                    time.sleep(2)
+                    st.rerun()
+    if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
+        result_data = st.session_state.result_data
+        st.subheader("Theme")
+        st.info(result_data['theme'])
+        st.subheader("Style")
+        st.info(result_data['style'])
+        for asset in result_data['assets']:
+            st.header(f"Asset {asset['id']}")
+            for result in asset['results']:
+                cols_result = st.columns([1, 1])
+                st.text("Result")
+                with cols_result[0]:
+                    if "prompt" in result:
+                        st.info(f"{result['prompt']}")
+                with cols_result[1]:
+                    for url in result['urls']:
+                        st.image(url, width=400)
+            st.divider()
+        st.subheader("Cost")
+        st.write(f"Total Cost: {result_data['cost']['totalCost']} {result_data['cost']['currency']}")
+        st.json(result_data['cost']['costBreakdown'])
+        st.subheader("JSON Results")
+        st.json(result_data)
 
 # Query Cost tab
-with cost_tab:
+with st.sidebar:
     st.header("Query Cost")
     with st.form(key='cost_query_form'):
         username = st.text_input("(Optional, Will Use Authenticated User ID if None) Username")
