@@ -68,7 +68,7 @@ def download_result(url):
 
 # Sidebar menu
 st.sidebar.title("Menu")
-menu_option = st.sidebar.selectbox("Select an option", ["Home", "Playable Content Generator", "Variation Generator"])
+menu_option = st.sidebar.selectbox("Select an option", ["Home", "Playable Content Generator", "Variation Generator", "Inpainting"])
 
 # Check authentication status
 is_authenticated = st.session_state.get('is_authenticated', False)
@@ -155,6 +155,11 @@ elif menu_option == "Variation Generator":
         st.image(image_url, width=200)
     prompt = st.text_input("Text Prompt", "rabbit")
     reference_urls = st.text_area("Reference Image URLs (comma-separated)", "").split(',')
+    # Display previews of reference URLs
+    for ref_url in reference_urls:
+        if ref_url.strip():
+            st.image(ref_url.strip(), width=200)
+
 
     if st.button("Generate Variation"):
         if 'token' in st.session_state and image_url and prompt:
@@ -173,6 +178,37 @@ elif menu_option == "Variation Generator":
                     st.error("Failed to retrieve image URL.")
             else:
                 st.error("Failed to start variation generation process.")
+        else:
+            st.error("Please authenticate and fill in all fields!")
+
+elif menu_option == "Inpainting":
+    st.header("Inpainting")
+    
+    # Input fields for inpainting
+    image_url = st.text_input("Image URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint.png")
+    if image_url:
+        st.image(image_url, width=200)
+    prompt = st.text_input("Text Prompt", "a black cat with glowing eyes, cute, adorable, disney, pixar, highly detailed, 8k")
+    mask_url = st.text_input("Mask URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint_mask.png")
+    if mask_url:
+        st.image(mask_url, width=200)
+    if st.button("Generate Inpainting"):
+        if 'token' in st.session_state and image_url and prompt and mask_url:
+            data = {
+                "image": image_url,
+                "prompt": prompt,
+                "mask": mask_url
+            }
+            inpainting_response = start_generation(st.session_state.token, data, "images/edit")
+            if inpainting_response:
+                st.success("Inpainting generation started!")
+                generated_image_url = inpainting_response.get('image')
+                if generated_image_url:
+                    st.image(generated_image_url, caption="Generated Inpainting", width=500)
+                else:
+                    st.error("Failed to retrieve image URL.")
+            else:
+                st.error("Failed to start inpainting generation process.")
         else:
             st.error("Please authenticate and fill in all fields!")
 
