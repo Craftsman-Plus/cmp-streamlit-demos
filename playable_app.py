@@ -263,9 +263,12 @@ if 'job_id' in st.session_state:
                     for url in result['urls']:
                         st.image(url, width=400)
             st.divider()
-        st.subheader("Cost")
-        st.write(f"Total Cost: {result_data['cost']['totalCost']} {result_data['cost']['currency']}")
-        st.json(result_data['cost']['costBreakdown'])
+        try:
+            st.subheader("Cost")
+            st.write(f"Total Cost: {result_data['cost']['totalCost']} {result_data['cost']['currency']}")
+            st.json(result_data['cost']['costBreakdown'])
+        except:
+            st.subheader("Cost (No Info)")
         st.subheader("JSON Results")
         st.json(result_data)
 
