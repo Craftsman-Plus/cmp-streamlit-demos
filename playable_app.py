@@ -202,8 +202,15 @@ elif menu_option == "Inpainting":
     image_url = st.text_input("Image URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint.png")
     if image_url:
         st.image(image_url, width=200)
-    prompt = st.text_input("Text Prompt", "a black cat with glowing eyes, cute, adorable, disney, pixar, highly detailed, 8k")
-    mask_url = st.text_input("Mask URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint_mask.png")
+    prompt = st.text_input("Text Prompt", "a mountain with a black cat with glowing eyes, cute, adorable, disney, pixar, highly detailed, 8k")
+    mask_url = st.text_input("Mask URL", "https://i.postimg.cc/YSsmgQgZ/inpaint-mask.png")
+    size_option = st.sidebar.selectbox("Select image size", ["256x256", "512x512", "1024x1024"], index=1)
+    if size_option == "256x256":
+        size = "256x256"
+    elif size_option == "512x512":
+        size = "512x512"
+    elif size_option == "1024x1024":
+        size = "1024x1024"
     if mask_url:
         st.image(mask_url, width=200)
     if st.button("Generate Inpainting"):
@@ -212,7 +219,7 @@ elif menu_option == "Inpainting":
                 "image": image_url,
                 "prompt": prompt,
                 "mask": mask_url,
-                "size": "512x512"
+                "size": size
             }
             inpainting_response = start_generation(st.session_state.token, data, "images/edit")
             if inpainting_response:
