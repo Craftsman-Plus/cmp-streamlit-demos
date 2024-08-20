@@ -199,11 +199,11 @@ elif menu_option == "Inpainting":
     st.header("Inpainting")
     
     # Input fields for inpainting
-    image_url = st.text_input("Image URL", "https://i.postimg.cc/hGrDkmKv/dogs-with-stick-512.png")
+    image_url = st.text_input("Image URL", "https://i.postimg.cc/J4s0w57t/red-girl.png")
     if image_url:
         st.image(image_url, width=200)
-    prompt = st.text_input("Text Prompt", "two golden retrievers running with a stick in their mouths")
-    mask_url = st.text_input("Mask URL", "https://i.postimg.cc/zDsXs8Ts/mask-16-resize.png")
+    prompt = st.text_input("Text Prompt", "a devil girl against a surreal, magical background with floating red and black islands, surrounded by dark swirling mist, glowing red crystals, and arcane symbols")
+    mask_url = st.text_input("Mask URL", "https://i.postimg.cc/d3Xc8ffC/mask-0-resize.png")
     size_option = st.selectbox("Select image size", ["256x256", "512x512", "1024x1024"], index=1)
     if size_option == "256x256":
         size = "256x256"
