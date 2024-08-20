@@ -199,11 +199,11 @@ elif menu_option == "Inpainting":
     st.header("Inpainting")
     
     # Input fields for inpainting
-    image_url = st.text_input("Image URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint.png")
+    image_url = st.text_input("Image URL", "https://i.postimg.cc/hGrDkmKv/dogs-with-stick-512.png")
     if image_url:
         st.image(image_url, width=200)
-    prompt = st.text_input("Text Prompt", "a mountain with a black cat with glowing eyes, cute, adorable, disney, pixar, highly detailed, 8k")
-    mask_url = st.text_input("Mask URL", "https://i.postimg.cc/YSsmgQgZ/inpaint-mask.png")
+    prompt = st.text_input("Text Prompt", "two golden retrievers running with a stick in their mouths")
+    mask_url = st.text_input("Mask URL", "https://i.postimg.cc/zDsXs8Ts/mask-16-resize.png")
     size_option = st.selectbox("Select image size", ["256x256", "512x512", "1024x1024"], index=1)
     if size_option == "256x256":
         size = "256x256"
