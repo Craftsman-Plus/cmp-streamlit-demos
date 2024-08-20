@@ -204,7 +204,7 @@ elif menu_option == "Inpainting":
         st.image(image_url, width=200)
     prompt = st.text_input("Text Prompt", "a mountain with a black cat with glowing eyes, cute, adorable, disney, pixar, highly detailed, 8k")
     mask_url = st.text_input("Mask URL", "https://i.postimg.cc/YSsmgQgZ/inpaint-mask.png")
-    size_option = st.sidebar.selectbox("Select image size", ["256x256", "512x512", "1024x1024"], index=1)
+    size_option = st.selectbox("Select image size", ["256x256", "512x512", "1024x1024"], index=1)
     if size_option == "256x256":
         size = "256x256"
     elif size_option == "512x512":
