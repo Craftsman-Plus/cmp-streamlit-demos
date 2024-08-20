@@ -199,11 +199,18 @@ elif menu_option == "Inpainting":
     st.header("Inpainting")
     
     # Input fields for inpainting
-    image_url = st.text_input("Image URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint.png")
+    image_url = st.text_input("Image URL", "https://i.postimg.cc/J4s0w57t/red-girl.png")
     if image_url:
         st.image(image_url, width=200)
-    prompt = st.text_input("Text Prompt", "a black cat with glowing eyes, cute, adorable, disney, pixar, highly detailed, 8k")
-    mask_url = st.text_input("Mask URL", "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/inpaint_mask.png")
+    prompt = st.text_input("Text Prompt", "a devil girl against a surreal, magical background with floating red and black islands, surrounded by dark swirling mist, glowing red crystals, and arcane symbols")
+    mask_url = st.text_input("Mask URL", "https://i.postimg.cc/d3Xc8ffC/mask-0-resize.png")
+    size_option = st.selectbox("Select image size", ["256x256", "512x512", "1024x1024"], index=2)
+    if size_option == "256x256":
+        size = "256x256"
+    elif size_option == "512x512":
+        size = "512x512"
+    elif size_option == "1024x1024":
+        size = "1024x1024"
     if mask_url:
         st.image(mask_url, width=200)
     if st.button("Generate Inpainting"):
@@ -211,20 +218,23 @@ elif menu_option == "Inpainting":
             data = {
                 "image": image_url,
                 "prompt": prompt,
-                "mask": mask_url
+                "mask": mask_url,
+                "size": size
             }
             inpainting_response = start_generation(st.session_state.token, data, "images/edit")
             if inpainting_response:
                 st.success("Inpainting generation started!")
-                job_id = inpainting_response.get('jobId')
-                inference_id = inpainting_response.get('inferenceId')
-                if job_id and inference_id:
-                    st.session_state.inpainting_job_id = job_id
-                    st.session_state.inpainting_inference_id = inference_id
-                    st.session_state.inpainting_phase = "IN_PROGRESS"
-                    st.rerun()
-                else:
-                    st.error("Failed to retrieve job ID or inference ID.")
+                image_url = inpainting_response.get('imageUrl')
+                st.session_state.inpainting_image_url = image_url
+                # job_id = inpainting_response.get('jobId')
+                # inference_id = inpainting_response.get('inferenceId')
+                # if job_id and inference_id:
+                #     st.session_state.inpainting_job_id = job_id
+                #     st.session_state.inpainting_inference_id = inference_id
+                #     st.session_state.inpainting_phase = "IN_PROGRESS"
+                #     st.rerun()
+                # else:
+                #     st.error("Failed to retrieve job ID or inference ID.")
             else:
                 st.error("Failed to start inpainting generation process.")
         else:
@@ -263,10 +273,13 @@ if 'variation_job_id' in st.session_state:
                     time.sleep(2)
                     st.rerun()
 
-if 'inpainting_job_id' in st.session_state:
+# if 'inpainting_job_id' in st.session_state:
+if 'inpainting_image_url' in st.session_state:
     st.header("Inpainting Generation Results")
-    job_id = st.session_state.inpainting_job_id
-    inference_id = st.session_state.inpainting_inference_id
+    # job_id = st.session_state.inpainting_job_id
+    # inference_id = st.session_state.inpainting_inference_id
+    image_url = st.session_state.inpainting_image_url
+    st.image(image_url, caption="Generated Inpainting", width=500)
 
     # Check the status with a progress bar
     progress_bar = st.progress(st.session_state.get('progress', 0))
