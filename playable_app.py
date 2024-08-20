@@ -276,8 +276,8 @@ if 'variation_job_id' in st.session_state:
 # if 'inpainting_job_id' in st.session_state:
 if 'inpainting_image_url' in st.session_state:
     st.header("Inpainting Generation Results")
-    # job_id = st.session_state.inpainting_job_id
-    # inference_id = st.session_state.inpainting_inference_id
+    job_id = st.session_state.inpainting_job_id
+    inference_id = st.session_state.inpainting_inference_id
     image_url = st.session_state.inpainting_image_url
     st.image(image_url, caption="Generated Inpainting", width=500)
 
@@ -368,3 +368,29 @@ if 'playable_job_id' in st.session_state:
             st.subheader("Cost (No Info)")
         st.subheader("JSON Results")
         st.json(result_data)
+    # progress_bar = st.progress(st.session_state.get('progress', 0))
+    # status_placeholder = st.empty()
+    # if st.session_state.inpainting_phase not in ["success", "failure", "canceled"]:
+    #     while True:
+    #         status_response = poll_job_poller(st.session_state.token, job_id, inference_id)
+    #         if status_response:
+    #             phase = status_response.get('phase')
+    #             message = status_response.get('message')
+    #             status_placeholder.write(f"Phase: {phase}\nMessage: {message}")
+    #             st.session_state.inpainting_phase = phase
+    #             st.session_state.progress = int(float(status_response.get('progress', 0)))
+    #             progress_bar.progress(st.session_state.progress)
+    #             if phase == 'success':
+    #                 st.success("Inpainting generation completed!")
+    #                 image_url = status_response.get('filepath')
+    #                 if image_url:
+    #                     st.image(image_url, caption="Generated Inpainting", width=500)
+    #                 else:
+    #                     st.error("Failed to retrieve image URL.")
+    #                 break
+    #             elif phase == 'failure' or phase == 'canceled':
+    #                 st.error(f'Inpainting generation {phase}!')
+    #                 break
+    #             else:
+    #                 time.sleep(2)
+    #                 st.rerun()
