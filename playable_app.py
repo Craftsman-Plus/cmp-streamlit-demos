@@ -211,7 +211,8 @@ elif menu_option == "Inpainting":
             data = {
                 "image": image_url,
                 "prompt": prompt,
-                "mask": mask_url
+                "mask": mask_url,
+                "size": "512x512"
             }
             inpainting_response = start_generation(st.session_state.token, data, "images/edit")
             if inpainting_response:
