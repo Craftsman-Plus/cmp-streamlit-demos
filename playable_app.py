@@ -286,7 +286,7 @@ if 'inpainting_image_url' in st.session_state:
     status_placeholder = st.empty()
     if st.session_state.inpainting_phase not in ["success", "failure", "canceled"]:
         while True:
-            status_response = poll_job_poller(st.session_state.token, job_id, inference_id)
+            status_response = poll_job_poller(st.session_state.token, job_id, None)
             if status_response:
                 phase = status_response.get('phase')
                 message = status_response.get('message')
