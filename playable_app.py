@@ -145,7 +145,7 @@ elif menu_option == "Playable Content Generator":
                 job_id = generation_response.get('id')
                 location = generation_response.get('url')
                 if job_id and location:
-                    st.session_state.job_id = job_id
+                    st.session_state.playable_job_id = job_id
                     st.session_state.location = location
                     st.session_state.progress = 0
                     st.session_state.phase = "IN_PROGRESS"
@@ -295,3 +295,63 @@ if 'inpainting_job_id' in st.session_state:
                 else:
                     time.sleep(2)
                     st.rerun()
+
+# Results tab
+if 'playable_job_id' in st.session_state:
+    st.header("Generation Results")
+    job_id = st.session_state.playable_job_id
+    location = st.session_state.location
+    token = st.session_state.token
+
+    # Check the status with a progress bar
+    progress_bar = st.progress(st.session_state.get('progress', 0))
+    status_placeholder = st.empty()
+    
+    if st.session_state.phase == "IN_PROGRESS":
+        while True:
+            status_response = check_status(token, job_id)
+            if status_response:
+                phase = status_response.get('phase')
+                message = status_response.get('message')
+                status_placeholder.write(f"Phase: {phase}\nMessage: {message}")
+                st.session_state.phase = phase
+                st.session_state.progress = int(float(status_response.get('progress', 0)))
+                progress_bar.progress(st.session_state.progress)
+                if phase == 'COMPLETED':
+                    st.success("Generation completed!")
+                    result_data = download_result(location)
+                    if result_data:
+                        st.session_state.result_data = result_data
+                        st.rerun()
+                elif phase == 'FAILED':
+                    st.error("Generation failed!")
+                    break
+                else:
+                    time.sleep(2)
+                    st.rerun()
+    if st.session_state.phase == "COMPLETED" and 'result_data' in st.session_state:
+        result_data = st.session_state.result_data
+        st.subheader("Theme")
+        st.info(result_data['theme'])
+        st.subheader("Style")
+        st.info(result_data['style'])
+        for asset in result_data['assets']:
+            st.header(f"Asset {asset['id']}")
+            for result in asset['results']:
+                cols_result = st.columns([1, 1])
+                st.text("Result")
+                with cols_result[0]:
+                    if "prompt" in result:
+                        st.info(f"{result['prompt']}")
+                with cols_result[1]:
+                    for url in result['urls']:
+                        st.image(url, width=400)
+            st.divider()
+        try:
+            st.subheader("Cost")
+            st.write(f"Total Cost: {result_data['cost']['totalCost']} {result_data['cost']['currency']}")
+            st.json(result_data['cost']['costBreakdown'])
+        except:
+            st.subheader("Cost (No Info)")
+        st.subheader("JSON Results")
+        st.json(result_data)
