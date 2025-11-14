@@ -241,38 +241,57 @@ with col1:
         st.info(f"💡 Will use S3 guidelines for '{brand_name}'")
 
 with col2:
-    st.subheader("🖼️ Upload Image")
+    st.subheader("🖼️ Provide Image")
     
-    # Option to use default image
-    use_default = st.checkbox("Use default sample image", value=False)
+    # Image source selection
+    image_source = st.radio(
+        "Image Source",
+        ["Upload File", "Image URL", "Use Default"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
     
-    if use_default:
-        st.info("Using bad Slack logo for testing")
-        st.image(DEFAULT_IMAGE_URL, use_container_width=True)
-        image_file = None
-        st.session_state.use_default_image = True
-    else:
+    image_file = None
+    image_url = None
+    
+    if image_source == "Upload File":
         st.session_state.use_default_image = False
-        # Image upload
         image_file = st.file_uploader(
             "Select playable image",
             type=['png', 'jpg', 'jpeg'],
             label_visibility="collapsed"
         )
-        
         if image_file:
             st.image(image_file, use_container_width=True)
+    
+    elif image_source == "Image URL":
+        st.session_state.use_default_image = False
+        image_url = st.text_input(
+            "Enter image URL",
+            placeholder="https://example.com/image.png",
+            label_visibility="collapsed"
+        )
+        if image_url:
+            try:
+                st.image(image_url, use_container_width=True)
+            except:
+                st.warning("⚠️ Unable to preview image from URL")
+    
+    elif image_source == "Use Default":
+        st.info("Using default Slack logo for testing")
+        st.image(DEFAULT_IMAGE_URL, use_container_width=True)
+        st.session_state.use_default_image = True
 
 st.divider()
 
 # Validate button
-has_image = image_file is not None or st.session_state.use_default_image
+has_image = image_file is not None or st.session_state.use_default_image or (image_url and len(image_url.strip()) > 0)
 if st.button("🚀 Validate Image", type="primary", use_container_width=True, disabled=not has_image):
     if not has_image:
-        st.error("Please upload an image or use default image")
+        st.error("Please provide an image (upload, URL, or use default)")
     else:
         with st.spinner('🔍 Validating...'):
-            # Handle default image vs uploaded image
+            # Handle different image sources
             if st.session_state.use_default_image:
                 # Download default image and encode
                 try:
@@ -296,7 +315,30 @@ if st.button("🚀 Validate Image", type="primary", use_container_width=True, di
                 except Exception as e:
                     st.error(f"Error processing default image: {str(e)}")
                     image_b64 = None
+            elif image_url:
+                # Download image from URL and encode
+                try:
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                    response = requests.get(image_url, timeout=10, headers=headers)
+                    response.raise_for_status()
+                    
+                    if len(response.content) == 0:
+                        st.error("Image from URL is empty")
+                        image_b64 = None
+                    else:
+                        image_b64 = base64.b64encode(response.content).decode('utf-8')
+                        st.success(f"✅ Loaded image from URL ({len(response.content)} bytes)")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Failed to load image from URL: {str(e)}")
+                    st.error(f"URL: {image_url}")
+                    image_b64 = None
+                except Exception as e:
+                    st.error(f"Error processing image from URL: {str(e)}")
+                    image_b64 = None
             else:
+                # Uploaded file
                 image_file.seek(0)
                 image_b64 = encode_image_to_base64(image_file)
             
