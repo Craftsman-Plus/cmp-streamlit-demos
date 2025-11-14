@@ -155,46 +155,59 @@ with col1:
     
     st.divider()
     
-    # Brand Guidelines Upload Section
-    st.caption("📤 Upload Brand Guidelines (optional)")
-    st.caption("Upload custom guidelines to override S3. Supports PDF, images, and text files.")
-    
-    guidelines_files = st.file_uploader(
-        "Upload Guidelines",
-        type=['pdf', 'png', 'jpg', 'jpeg', 'txt', 'md'],
-        accept_multiple_files=True,
-        help="Upload brand guidelines files. You can upload multiple PDFs, images, or text files.",
-        label_visibility="collapsed"
+    # Checkbox to choose guidelines source
+    use_uploaded_guidelines = st.checkbox(
+        "Use uploaded guidelines instead of S3",
+        value=False,
+        help="Check this to use your own uploaded guidelines instead of fetching from S3"
     )
     
-    guidelines_text = None
-    if guidelines_files:
-        st.success(f"✅ {len(guidelines_files)} file(s) uploaded")
-        
-        # Show uploaded files
-        with st.expander("View uploaded files"):
-            for file in guidelines_files:
-                st.text(f"• {file.name} ({file.type})")
-        
-        # Process files for text-based validation
-        if not use_vision:
-            all_text = []
-            for file in guidelines_files:
-                if file.type == "application/pdf":
-                    with st.spinner(f"Reading {file.name}..."):
-                        texts = extract_pdf_text(file)
-                        if texts:
-                            all_text.extend(texts)
-                elif file.type.startswith("text/"):
-                    content = file.read().decode('utf-8')
-                    all_text.append(content)
-            
-            if all_text:
-                guidelines_text = all_text
-                st.caption(f"📄 Processed {len(all_text)} text sections")
+    # Brand Guidelines Upload Section
+    if use_uploaded_guidelines:
+        st.caption("📤 Upload Brand Guidelines")
+        st.caption("Upload your custom guidelines. Supports PDF, images, and text files.")
     else:
-        if not use_vision:
-            st.info("💡 Will fetch guidelines from S3 if available")
+        st.caption(f"📁 Using guidelines from S3 for brand: {brand_name}")
+    
+    guidelines_text = None
+    
+    if use_uploaded_guidelines:
+        guidelines_files = st.file_uploader(
+            "Upload Guidelines",
+            type=['pdf', 'png', 'jpg', 'jpeg', 'txt', 'md'],
+            accept_multiple_files=True,
+            help="Upload brand guidelines files. You can upload multiple PDFs, images, or text files.",
+            label_visibility="collapsed"
+        )
+        
+        if guidelines_files:
+            st.success(f"✅ {len(guidelines_files)} file(s) uploaded")
+            
+            # Show uploaded files
+            with st.expander("View uploaded files"):
+                for file in guidelines_files:
+                    st.text(f"• {file.name} ({file.type})")
+            
+            # Process files for text-based validation
+            if not use_vision:
+                all_text = []
+                for file in guidelines_files:
+                    if file.type == "application/pdf":
+                        with st.spinner(f"Reading {file.name}..."):
+                            texts = extract_pdf_text(file)
+                            if texts:
+                                all_text.extend(texts)
+                    elif file.type.startswith("text/"):
+                        content = file.read().decode('utf-8')
+                        all_text.append(content)
+                
+                if all_text:
+                    guidelines_text = all_text
+                    st.caption(f"📄 Processed {len(all_text)} text sections")
+        else:
+            st.warning("⚠️ Please upload guidelines files")
+    else:
+        st.info(f"💡 Will use S3 guidelines for '{brand_name}'")
 
 with col2:
     st.subheader("🖼️ Upload Image")
