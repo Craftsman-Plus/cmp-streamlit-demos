@@ -378,17 +378,28 @@ if st.button("🚀 Validate Image", type="primary", use_container_width=True, di
             if image_b64:
                 # Prepare guideline files for upload
                 guideline_data = None
-                if use_uploaded_guidelines and guidelines_files:
-                    with st.spinner('📄 Processing guideline files...'):
-                        guideline_data = convert_guidelines_to_base64(guidelines_files)
-                    if len(guideline_data) > 0:
-                        st.info(f"📤 Uploading {len(guideline_data)} guideline file(s) to server")
+                if use_uploaded_guidelines:
+                    # Using uploaded guidelines - ignore S3
+                    if guidelines_files:
+                        with st.spinner('📄 Processing guideline files...'):
+                            guideline_data = convert_guidelines_to_base64(guidelines_files)
+                        if len(guideline_data) > 0:
+                            st.info(f"📤 Uploading {len(guideline_data)} guideline file(s) to server")
+                        else:
+                            st.error("No valid guideline files processed")
+                    else:
+                        st.error("Please upload guideline files or uncheck 'Use uploaded guidelines'")
+                        st.stop()
+                else:
+                    # Using S3 guidelines - explicitly set to None
+                    guideline_data = None
+                    st.info(f"📡 Fetching guidelines from S3 for brand: {brand_name}")
                 
                 result = validate_image(
                     token=st.session_state.token,
                     image_b64=image_b64,
                     brand=brand_name,
-                    guideline_files=guideline_data,
+                    guideline_files=guideline_data,  # None when using S3, array when uploaded
                     user=""
                 )
                 
