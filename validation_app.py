@@ -272,6 +272,7 @@ with col2:
     image_source = st.radio(
         "Image Source",
         ["Upload File", "Image URL", "Use Default"],
+        index=2,  # Default to "Use Default"
         horizontal=True,
         label_visibility="collapsed"
     )
