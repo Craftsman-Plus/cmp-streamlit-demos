@@ -48,6 +48,22 @@ def encode_image_to_base64(image_file):
         st.error(f"Error encoding image: {e}")
         return None
 
+# Function to validate token
+def validate_token(token):
+    """Quick check if token is still valid"""
+    try:
+        # Try a simple request to check if token works
+        # You could use any endpoint that requires auth
+        headers = {"Authorization": token}
+        response = requests.get(
+            'https://ai.dev.craftsmanplus.com/api/health',  # or any lightweight endpoint
+            headers=headers,
+            timeout=5
+        )
+        return response.status_code != 401
+    except:
+        return False
+
 # Function to validate image
 def validate_image(token, image_b64, brand, guidelines=None, vision=True, user=""):
     try:
@@ -68,6 +84,20 @@ def validate_image(token, image_b64, brand, guidelines=None, vision=True, user="
         )
         response.raise_for_status()
         return response.json()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            st.error("🔐 Authentication token expired. Please log in again.")
+            # Clear the expired token
+            st.session_state.is_authenticated = False
+            st.session_state.token = None
+            cookies['auth_token'] = ''
+            cookies.save()
+            st.rerun()
+        else:
+            st.error(f"Error during validation: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                st.error(f"Response: {e.response.text}")
+        return None
     except Exception as e:
         st.error(f"Error during validation: {e}")
         if hasattr(e, 'response') and e.response is not None:
@@ -78,7 +108,8 @@ def validate_image(token, image_b64, brand, guidelines=None, vision=True, user="
 if 'is_authenticated' not in st.session_state:
     # Check if we have a saved token in cookies
     saved_token = cookies.get('auth_token')
-    if saved_token:
+    if saved_token and saved_token.strip():
+        # Token exists in cookies, mark as authenticated
         st.session_state.is_authenticated = True
         st.session_state.token = saved_token
     else:
