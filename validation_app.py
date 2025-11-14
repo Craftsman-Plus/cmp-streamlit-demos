@@ -67,6 +67,11 @@ def validate_image(token, image_b64, brand, guidelines=None, vision=True, user="
 # Initialize session state
 if 'is_authenticated' not in st.session_state:
     st.session_state.is_authenticated = False
+if 'use_default_image' not in st.session_state:
+    st.session_state.use_default_image = False
+
+# Default sample image URL (you can change this to any publicly accessible image)
+DEFAULT_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Slack_Technologies_Logo.svg/2560px-Slack_Technologies_Logo.svg.png"
 
 # Page header
 st.title("🎨 Brand Guidelines Validator")
@@ -131,28 +136,49 @@ with col1:
 with col2:
     st.subheader("🖼️ Upload Image")
     
-    # Image upload
-    image_file = st.file_uploader(
-        "Select playable image",
-        type=['png', 'jpg', 'jpeg'],
-        label_visibility="collapsed"
-    )
+    # Option to use default image
+    use_default = st.checkbox("Use default sample image", value=False)
     
-    if image_file:
-        st.image(image_file, use_container_width=True)
+    if use_default:
+        st.info("Using default Slack logo for testing")
+        st.image(DEFAULT_IMAGE_URL, use_container_width=True)
+        image_file = None
+        st.session_state.use_default_image = True
+    else:
+        st.session_state.use_default_image = False
+        # Image upload
+        image_file = st.file_uploader(
+            "Select playable image",
+            type=['png', 'jpg', 'jpeg'],
+            label_visibility="collapsed"
+        )
+        
+        if image_file:
+            st.image(image_file, use_container_width=True)
 
 st.divider()
 
 # Validate button
-if st.button("🚀 Validate Image", type="primary", use_container_width=True, disabled=not image_file):
-    if not image_file:
-        st.error("Please upload an image")
+has_image = image_file is not None or st.session_state.use_default_image
+if st.button("🚀 Validate Image", type="primary", use_container_width=True, disabled=not has_image):
+    if not has_image:
+        st.error("Please upload an image or use default image")
     elif not use_vision and not guidelines_text:
         st.error("Text-based validation requires guidelines PDF")
     else:
         with st.spinner('🔍 Validating...'):
-            image_file.seek(0)
-            image_b64 = encode_image_to_base64(image_file)
+            # Handle default image vs uploaded image
+            if st.session_state.use_default_image:
+                # Download default image and encode
+                response = requests.get(DEFAULT_IMAGE_URL)
+                if response.status_code == 200:
+                    image_b64 = base64.b64encode(response.content).decode('utf-8')
+                else:
+                    st.error("Failed to load default image")
+                    image_b64 = None
+            else:
+                image_file.seek(0)
+                image_b64 = encode_image_to_base64(image_file)
             
             if image_b64:
                 result = validate_image(
