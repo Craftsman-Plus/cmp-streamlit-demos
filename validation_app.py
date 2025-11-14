@@ -311,7 +311,7 @@ with col2:
                 st.warning("⚠️ Unable to preview image from URL")
     
     elif image_source == "Use Default":
-        st.info("Using default Slack logo for testing")
+        st.info("Using intentionally non-compliant Slack logo for testing")
         st.image(DEFAULT_IMAGE_URL, use_container_width=True)
         st.session_state.use_default_image = True
 
