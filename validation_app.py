@@ -125,7 +125,8 @@ def validate_image(token, image_b64, brand, guideline_images=None, user=""):
         response = requests.post(
             url=url,
             json=payload,
-            headers={"Authorization": token}
+            headers={"Authorization": token},
+            timeout=900  # 15 minutes to match Lambda timeout
         )
         response.raise_for_status()
         return response.json()
