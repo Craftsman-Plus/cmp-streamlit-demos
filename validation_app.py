@@ -215,16 +215,19 @@ col1, col2 = st.columns([1, 1])
 with col1:
     st.subheader("📋 Configuration")
     
-    # Brand name
-    brand_name = st.text_input(
+    # Available brands in S3
+    available_brands = ["slack", "dailypay"]
+    
+    # Brand name dropdown
+    brand_name = st.selectbox(
         "Brand Name",
-        value="slack",
-        help="Enter the brand name"
+        options=available_brands,
+        index=0,  # Default to first option (slack)
+        help="Select a brand with guidelines available in S3"
     )
     
     # Show info about existing guidelines
-    if brand_name.lower() == "slack":
-        st.info("✨ Slack brand guidelines are already available in S3")
+    st.info(f"✨ {brand_name.title()} brand guidelines are available in S3")
     
     st.divider()
     
