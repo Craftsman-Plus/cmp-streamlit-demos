@@ -151,24 +151,49 @@ with col1:
         st.info("✨ Slack brand guidelines are already available in S3")
     
     # Validation mode
-    use_vision = st.toggle("Use Vision-based Validation", value=True, help="Vision-based uses AI to directly analyze images against S3 guidelines. Turn off to upload custom PDF guidelines.")
+    use_vision = st.toggle("Use Vision-based Validation", value=True, help="Vision-based uses AI to directly analyze images against S3 guidelines. Turn off for text-based validation.")
     
-    # Optional guidelines upload for text-based mode
-    if not use_vision:
-        st.caption("📤 Upload custom brand guidelines PDF (optional - will use S3 if available)")
-        guidelines_file = st.file_uploader(
-            "Upload Guidelines PDF",
-            type=['pdf'],
-            help="Upload a PDF to override S3 guidelines for text-based validation",
-            label_visibility="collapsed"
-        )
-        guidelines_text = None
-        if guidelines_file:
-            with st.spinner("Reading PDF..."):
-                guidelines_text = extract_pdf_text(guidelines_file)
-            if guidelines_text:
-                st.success(f"✅ Using uploaded PDF ({len(guidelines_text)} pages)")
-        else:
+    st.divider()
+    
+    # Brand Guidelines Upload Section
+    st.caption("📤 Upload Brand Guidelines (optional)")
+    st.caption("Upload custom guidelines to override S3. Supports PDF, images, and text files.")
+    
+    guidelines_files = st.file_uploader(
+        "Upload Guidelines",
+        type=['pdf', 'png', 'jpg', 'jpeg', 'txt', 'md'],
+        accept_multiple_files=True,
+        help="Upload brand guidelines files. You can upload multiple PDFs, images, or text files.",
+        label_visibility="collapsed"
+    )
+    
+    guidelines_text = None
+    if guidelines_files:
+        st.success(f"✅ {len(guidelines_files)} file(s) uploaded")
+        
+        # Show uploaded files
+        with st.expander("View uploaded files"):
+            for file in guidelines_files:
+                st.text(f"• {file.name} ({file.type})")
+        
+        # Process files for text-based validation
+        if not use_vision:
+            all_text = []
+            for file in guidelines_files:
+                if file.type == "application/pdf":
+                    with st.spinner(f"Reading {file.name}..."):
+                        texts = extract_pdf_text(file)
+                        if texts:
+                            all_text.extend(texts)
+                elif file.type.startswith("text/"):
+                    content = file.read().decode('utf-8')
+                    all_text.append(content)
+            
+            if all_text:
+                guidelines_text = all_text
+                st.caption(f"📄 Processed {len(all_text)} text sections")
+    else:
+        if not use_vision:
             st.info("💡 Will fetch guidelines from S3 if available")
 
 with col2:
@@ -178,7 +203,7 @@ with col2:
     use_default = st.checkbox("Use default sample image", value=False)
     
     if use_default:
-        st.info("Using default Slack logo for testing")
+        st.info("Using bad Slack logo for testing")
         st.image(DEFAULT_IMAGE_URL, use_container_width=True)
         image_file = None
         st.session_state.use_default_image = True
