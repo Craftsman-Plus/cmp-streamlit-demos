@@ -64,33 +64,35 @@ def validate_token(token):
     except:
         return False
 
-# Function to convert guideline files to base64 images
-def convert_guidelines_to_images(files):
-    """Convert uploaded guideline files (images, PDFs, text) to base64 images"""
-    from pdf2image import convert_from_bytes
+# Function to convert guideline files to base64 (send to Lambda for processing)
+def convert_guidelines_to_base64(files):
+    """Convert uploaded guideline files to base64 - Lambda will handle PDF conversion"""
     from io import BytesIO
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw
     
-    images = []
+    file_data = []
     for file in files:
         try:
             file.seek(0)
             if file.type in ['image/png', 'image/jpeg', 'image/jpg']:
                 # Already an image, just encode
                 img_b64 = base64.b64encode(file.read()).decode('utf-8')
-                images.append(img_b64)
+                file_data.append({
+                    'type': 'image',
+                    'data': img_b64,
+                    'name': file.name
+                })
                 st.success(f"✅ Loaded image: {file.name}")
             
             elif file.type == 'application/pdf':
-                # Convert PDF to images
-                pdf_bytes = file.read()
-                pdf_images = convert_from_bytes(pdf_bytes)
-                for idx, img in enumerate(pdf_images):
-                    buffered = BytesIO()
-                    img.save(buffered, format="PNG")
-                    img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                    images.append(img_b64)
-                st.success(f"✅ Converted PDF '{file.name}' to {len(pdf_images)} images")
+                # Send PDF as base64 - Lambda will convert to images
+                pdf_b64 = base64.b64encode(file.read()).decode('utf-8')
+                file_data.append({
+                    'type': 'pdf',
+                    'data': pdf_b64,
+                    'name': file.name
+                })
+                st.success(f"✅ Uploaded PDF: {file.name} (will be converted by server)")
             
             elif file.type.startswith('text/') or file.name.endswith('.md'):
                 # Convert text to image
@@ -103,15 +105,19 @@ def convert_guidelines_to_images(files):
                 buffered = BytesIO()
                 img.save(buffered, format="PNG")
                 img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                images.append(img_b64)
+                file_data.append({
+                    'type': 'image',
+                    'data': img_b64,
+                    'name': file.name
+                })
                 st.success(f"✅ Converted text '{file.name}' to image")
         except Exception as e:
             st.error(f"❌ Error processing {file.name}: {str(e)}")
     
-    return images
+    return file_data
 
 # Function to validate image
-def validate_image(token, image_b64, brand, guideline_images=None, user=""):
+def validate_image(token, image_b64, brand, guideline_files=None, user=""):
     try:
         url = 'https://ai.dev.craftsmanplus.com/api/images/validate'
         payload = {
@@ -119,8 +125,8 @@ def validate_image(token, image_b64, brand, guideline_images=None, user=""):
             "brand": brand,
             "user": user
         }
-        if guideline_images is not None:
-            payload["guideline_images"] = guideline_images
+        if guideline_files is not None:
+            payload["guideline_files"] = guideline_files
         
         response = requests.post(
             url=url,
@@ -370,19 +376,19 @@ if st.button("🚀 Validate Image", type="primary", use_container_width=True, di
                 image_b64 = encode_image_to_base64(image_file)
             
             if image_b64:
-                # Prepare guideline images from uploaded files
-                guideline_images = None
+                # Prepare guideline files for upload
+                guideline_data = None
                 if use_uploaded_guidelines and guidelines_files:
                     with st.spinner('📄 Processing guideline files...'):
-                        guideline_images = convert_guidelines_to_images(guidelines_files)
-                    if len(guideline_images) > 0:
-                        st.info(f"📤 Using {len(guideline_images)} guideline image(s) from uploaded files")
+                        guideline_data = convert_guidelines_to_base64(guidelines_files)
+                    if len(guideline_data) > 0:
+                        st.info(f"📤 Uploading {len(guideline_data)} guideline file(s) to server")
                 
                 result = validate_image(
                     token=st.session_state.token,
                     image_b64=image_b64,
                     brand=brand_name,
-                    guideline_images=guideline_images,
+                    guideline_files=guideline_data,
                     user=""
                 )
                 

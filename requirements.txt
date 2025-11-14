@@ -3,4 +3,4 @@ streamlit
 requests
 PyPDF2
 streamlit-cookies-manager
-pdf2image
+Pillow
