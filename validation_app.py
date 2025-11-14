@@ -220,14 +220,11 @@ with col1:
     
     # Brand name dropdown
     brand_name = st.selectbox(
-        "Brand Name",
+        "Brand Name (with guidelines in S3 bucket s3://dev-cmp-ai-assets/brands/{brand_name}/)",
         options=available_brands,
         index=0,  # Default to first option (slack)
         help="Select a brand with guidelines available in S3"
     )
-    
-    # Show info about existing guidelines
-    st.info(f"✨ {brand_name.title()} brand guidelines are available in S3")
     
     st.divider()
     
