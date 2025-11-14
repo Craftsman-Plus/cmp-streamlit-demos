@@ -146,22 +146,30 @@ with col1:
         help="Enter the brand name"
     )
     
+    # Show info about existing guidelines
+    if brand_name.lower() == "slack":
+        st.info("✨ Slack brand guidelines are already available in S3")
+    
     # Validation mode
-    use_vision = st.toggle("Use Vision-based Validation", value=True, help="Vision-based uses AI to directly analyze images. Turn off for text-based validation.")
+    use_vision = st.toggle("Use Vision-based Validation", value=True, help="Vision-based uses AI to directly analyze images against S3 guidelines. Turn off to upload custom PDF guidelines.")
     
     # Optional guidelines upload for text-based mode
     if not use_vision:
+        st.caption("📤 Upload custom brand guidelines PDF (optional - will use S3 if available)")
         guidelines_file = st.file_uploader(
             "Upload Guidelines PDF",
             type=['pdf'],
-            help="Required for text-based validation"
+            help="Upload a PDF to override S3 guidelines for text-based validation",
+            label_visibility="collapsed"
         )
         guidelines_text = None
         if guidelines_file:
             with st.spinner("Reading PDF..."):
                 guidelines_text = extract_pdf_text(guidelines_file)
             if guidelines_text:
-                st.success(f"✅ Extracted {len(guidelines_text)} pages")
+                st.success(f"✅ Using uploaded PDF ({len(guidelines_text)} pages)")
+        else:
+            st.info("💡 Will fetch guidelines from S3 if available")
 
 with col2:
     st.subheader("🖼️ Upload Image")
@@ -193,8 +201,6 @@ has_image = image_file is not None or st.session_state.use_default_image
 if st.button("🚀 Validate Image", type="primary", use_container_width=True, disabled=not has_image):
     if not has_image:
         st.error("Please upload an image or use default image")
-    elif not use_vision and not guidelines_text:
-        st.error("Text-based validation requires guidelines PDF")
     else:
         with st.spinner('🔍 Validating...'):
             # Handle default image vs uploaded image
