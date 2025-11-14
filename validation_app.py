@@ -245,12 +245,22 @@ if st.button("🚀 Validate Image", type="primary", use_container_width=True, di
             if st.session_state.use_default_image:
                 # Download default image and encode
                 try:
-                    response = requests.get(DEFAULT_IMAGE_URL, timeout=10)
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                    response = requests.get(DEFAULT_IMAGE_URL, timeout=10, headers=headers)
                     response.raise_for_status()
-                    image_b64 = base64.b64encode(response.content).decode('utf-8')
+                    
+                    if len(response.content) == 0:
+                        st.error("Default image is empty")
+                        image_b64 = None
+                    else:
+                        image_b64 = base64.b64encode(response.content).decode('utf-8')
+                        st.success(f"✅ Loaded default image ({len(response.content)} bytes)")
                 except requests.exceptions.RequestException as e:
                     st.error(f"Failed to load default image: {str(e)}")
                     st.error(f"URL: {DEFAULT_IMAGE_URL}")
+                    st.info("💡 Try uploading your own image instead")
                     image_b64 = None
                 except Exception as e:
                     st.error(f"Error processing default image: {str(e)}")
