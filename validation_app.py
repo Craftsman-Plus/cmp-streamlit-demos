@@ -132,7 +132,7 @@ def validate_image(token, image_b64, brand, guideline_files=None, user=""):
             url=url,
             json=payload,
             headers={"Authorization": token},
-            timeout=900  # 15 minutes to match Lambda timeout
+            timeout=35  # 35 seconds (API Gateway max is 30s + buffer)
         )
         response.raise_for_status()
         return response.json()
