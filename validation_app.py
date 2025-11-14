@@ -244,11 +244,16 @@ if st.button("🚀 Validate Image", type="primary", use_container_width=True, di
             # Handle default image vs uploaded image
             if st.session_state.use_default_image:
                 # Download default image and encode
-                response = requests.get(DEFAULT_IMAGE_URL)
-                if response.status_code == 200:
+                try:
+                    response = requests.get(DEFAULT_IMAGE_URL, timeout=10)
+                    response.raise_for_status()
                     image_b64 = base64.b64encode(response.content).decode('utf-8')
-                else:
-                    st.error("Failed to load default image")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Failed to load default image: {str(e)}")
+                    st.error(f"URL: {DEFAULT_IMAGE_URL}")
+                    image_b64 = None
+                except Exception as e:
+                    st.error(f"Error processing default image: {str(e)}")
                     image_b64 = None
             else:
                 image_file.seek(0)
