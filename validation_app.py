@@ -4,8 +4,18 @@ import requests
 from authenticate import authenticate_and_get_token
 from PyPDF2 import PdfReader
 import json
+import streamlit_cookies_manager
 
 st.set_page_config(page_title="Brand Guidelines Validator", layout="wide")
+
+# Initialize cookies manager
+cookies = streamlit_cookies_manager.EncryptedCookieManager(
+    prefix="validation_app_",
+    password="your-secret-password-here-change-in-production"
+)
+
+if not cookies.ready():
+    st.stop()
 
 # Pre-filled authentication details
 default_email = "system.admin@craftsmanplus.com"
@@ -66,15 +76,33 @@ def validate_image(token, image_b64, brand, guidelines=None, vision=True, user="
 
 # Initialize session state
 if 'is_authenticated' not in st.session_state:
-    st.session_state.is_authenticated = False
+    # Check if we have a saved token in cookies
+    saved_token = cookies.get('auth_token')
+    if saved_token:
+        st.session_state.is_authenticated = True
+        st.session_state.token = saved_token
+    else:
+        st.session_state.is_authenticated = False
+
 if 'use_default_image' not in st.session_state:
     st.session_state.use_default_image = False
 
 # Default sample image URL (you can change this to any publicly accessible image)
-DEFAULT_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Slack_Technologies_Logo.svg/2560px-Slack_Technologies_Logo.svg.png"
+DEFAULT_IMAGE_URL = "https://i.imgur.com/IsAk2ag.png"
 
 # Page header
 st.title("🎨 Brand Guidelines Validator")
+
+# Logout button in sidebar
+if st.session_state.is_authenticated:
+    with st.sidebar:
+        st.success("✅ Logged in")
+        if st.button("🚪 Logout"):
+            st.session_state.is_authenticated = False
+            st.session_state.token = None
+            cookies['auth_token'] = ''
+            cookies.save()
+            st.rerun()
 
 # Authentication section (compact)
 if not st.session_state.is_authenticated:
@@ -93,6 +121,9 @@ if not st.session_state.is_authenticated:
                     if token:
                         st.session_state.token = token
                         st.session_state.is_authenticated = True
+                        # Save token to cookies for persistent login
+                        cookies['auth_token'] = token
+                        cookies.save()
                         st.rerun()
                     else:
                         st.error("Authentication failed")
@@ -101,7 +132,6 @@ if not st.session_state.is_authenticated:
     st.stop()
 
 # Main content (only shown when authenticated)
-st.success("✅ Authenticated")
 
 # Two columns layout
 col1, col2 = st.columns([1, 1])
