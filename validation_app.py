@@ -64,18 +64,63 @@ def validate_token(token):
     except:
         return False
 
+# Function to convert guideline files to base64 images
+def convert_guidelines_to_images(files):
+    """Convert uploaded guideline files (images, PDFs, text) to base64 images"""
+    from pdf2image import convert_from_bytes
+    from io import BytesIO
+    from PIL import Image, ImageDraw, ImageFont
+    
+    images = []
+    for file in files:
+        try:
+            file.seek(0)
+            if file.type in ['image/png', 'image/jpeg', 'image/jpg']:
+                # Already an image, just encode
+                img_b64 = base64.b64encode(file.read()).decode('utf-8')
+                images.append(img_b64)
+                st.success(f"✅ Loaded image: {file.name}")
+            
+            elif file.type == 'application/pdf':
+                # Convert PDF to images
+                pdf_bytes = file.read()
+                pdf_images = convert_from_bytes(pdf_bytes)
+                for idx, img in enumerate(pdf_images):
+                    buffered = BytesIO()
+                    img.save(buffered, format="PNG")
+                    img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                    images.append(img_b64)
+                st.success(f"✅ Converted PDF '{file.name}' to {len(pdf_images)} images")
+            
+            elif file.type.startswith('text/') or file.name.endswith('.md'):
+                # Convert text to image
+                text_content = file.read().decode('utf-8')
+                # Create an image with the text
+                img = Image.new('RGB', (800, 1000), color='white')
+                draw = ImageDraw.Draw(img)
+                # Use default font
+                draw.text((10, 10), text_content[:1000], fill='black')  # Limit text length
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                img_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                images.append(img_b64)
+                st.success(f"✅ Converted text '{file.name}' to image")
+        except Exception as e:
+            st.error(f"❌ Error processing {file.name}: {str(e)}")
+    
+    return images
+
 # Function to validate image
-def validate_image(token, image_b64, brand, guidelines=None, vision=True, user=""):
+def validate_image(token, image_b64, brand, guideline_images=None, user=""):
     try:
         url = 'https://ai.dev.craftsmanplus.com/api/images/validate'
         payload = {
             "image": image_b64,
             "brand": brand,
-            "vision": vision,
             "user": user
         }
-        if guidelines is not None:
-            payload["guidelines"] = guidelines
+        if guideline_images is not None:
+            payload["guideline_images"] = guideline_images
         
         response = requests.post(
             url=url,
@@ -181,9 +226,6 @@ with col1:
     if brand_name.lower() == "slack":
         st.info("✨ Slack brand guidelines are already available in S3")
     
-    # Validation mode
-    use_vision = st.toggle("Use Vision-based Validation", value=True, help="Vision-based uses AI to directly analyze images against S3 guidelines. Turn off for text-based validation.")
-    
     st.divider()
     
     # Checkbox to choose guidelines source
@@ -196,18 +238,18 @@ with col1:
     # Brand Guidelines Upload Section
     if use_uploaded_guidelines:
         st.caption("📤 Upload Brand Guidelines")
-        st.caption("Upload your custom guidelines. Supports PDF, images, and text files.")
+        st.caption("Supports mixed file types: PDFs, images, and text files. All will be converted to images automatically.")
     else:
         st.caption(f"📁 Using guidelines from S3 for brand: {brand_name}")
     
-    guidelines_text = None
+    guidelines_files = None
     
     if use_uploaded_guidelines:
         guidelines_files = st.file_uploader(
             "Upload Guidelines",
             type=['pdf', 'png', 'jpg', 'jpeg', 'txt', 'md'],
             accept_multiple_files=True,
-            help="Upload brand guidelines files. You can upload multiple PDFs, images, or text files.",
+            help="Upload any combination of PDFs, images, or text files. The system will handle them automatically.",
             label_visibility="collapsed"
         )
         
@@ -218,23 +260,6 @@ with col1:
             with st.expander("View uploaded files"):
                 for file in guidelines_files:
                     st.text(f"• {file.name} ({file.type})")
-            
-            # Process files for text-based validation
-            if not use_vision:
-                all_text = []
-                for file in guidelines_files:
-                    if file.type == "application/pdf":
-                        with st.spinner(f"Reading {file.name}..."):
-                            texts = extract_pdf_text(file)
-                            if texts:
-                                all_text.extend(texts)
-                    elif file.type.startswith("text/"):
-                        content = file.read().decode('utf-8')
-                        all_text.append(content)
-                
-                if all_text:
-                    guidelines_text = all_text
-                    st.caption(f"📄 Processed {len(all_text)} text sections")
         else:
             st.warning("⚠️ Please upload guidelines files")
     else:
@@ -343,12 +368,19 @@ if st.button("🚀 Validate Image", type="primary", use_container_width=True, di
                 image_b64 = encode_image_to_base64(image_file)
             
             if image_b64:
+                # Prepare guideline images from uploaded files
+                guideline_images = None
+                if use_uploaded_guidelines and guidelines_files:
+                    with st.spinner('📄 Processing guideline files...'):
+                        guideline_images = convert_guidelines_to_images(guidelines_files)
+                    if len(guideline_images) > 0:
+                        st.info(f"📤 Using {len(guideline_images)} guideline image(s) from uploaded files")
+                
                 result = validate_image(
                     token=st.session_state.token,
                     image_b64=image_b64,
                     brand=brand_name,
-                    guidelines=guidelines_text if not use_vision else None,
-                    vision=use_vision,
+                    guideline_images=guideline_images,
                     user=""
                 )
                 
