@@ -8,7 +8,7 @@ import json
 st.set_page_config(page_title="Brand Guidelines Validator", layout="wide")
 
 # Pre-filled authentication details
-default_email = ""
+default_email = "system.admin@craftsmanplus.com"
 default_password = ""
 default_client_id = "4djrt5jve4ud0de66i75splf7l"
 
@@ -68,210 +68,136 @@ def validate_image(token, image_b64, brand, guidelines=None, vision=True, user="
 if 'is_authenticated' not in st.session_state:
     st.session_state.is_authenticated = False
 
-# Sidebar menu
-st.sidebar.title("🎨 Brand Guidelines Validator")
-menu_option = st.sidebar.selectbox(
-    "Select an option",
-    ["Home", "Image Validation"]
-)
+# Page header
+st.title("🎨 Brand Guidelines Validator")
 
-# Display authentication status
-status_text = "✅ Authenticated" if st.session_state.is_authenticated else "❌ Not Authenticated"
-status_color = "green" if st.session_state.is_authenticated else "red"
-st.sidebar.markdown(
-    f"<p style='font-size: 14px; color: {status_color}; font-weight: bold;'>{status_text}</p>",
-    unsafe_allow_html=True
-)
+# Authentication section (compact)
+if not st.session_state.is_authenticated:
+    with st.expander("🔐 Authentication Required", expanded=True):
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            email = st.text_input("Email", value=default_email)
+            password = st.text_input("Password", type="password", value=default_password)
+        with col2:
+            st.write("")
+            st.write("")
+            if st.button("🔓 Login", use_container_width=True):
+                if email and password:
+                    with st.spinner('Authenticating...'):
+                        token = get_token(email, password, default_client_id)
+                    if token:
+                        st.session_state.token = token
+                        st.session_state.is_authenticated = True
+                        st.rerun()
+                    else:
+                        st.error("Authentication failed")
+                else:
+                    st.error("Please fill in credentials")
+    st.stop()
 
-# Main content
-if menu_option == "Home":
-    st.title("🏠 Welcome to Brand Guidelines Validator")
-    st.markdown("""
-    This application allows you to validate playable images against brand guidelines using AI.
-    
-    ### Features:
-    - 📄 Upload brand guidelines as PDF
-    - 🖼️ Upload playable images for validation
-    - 🤖 Choose between Vision-based or Text-based validation
-    - ✅ Get detailed compliance results
-    
-    ### How to use:
-    1. **Authenticate** with your credentials below
-    2. Navigate to **Image Validation** in the sidebar
-    3. Upload your brand guidelines (PDF) or enter a brand name
-    4. Upload an image to validate
-    5. Get instant validation results!
-    """)
-    
-    st.divider()
-    
-    st.header("🔐 User Authentication")
-    with st.form(key='auth_form'):
-        email = st.text_input("Email", value=default_email, placeholder="your.email@example.com")
-        password = st.text_input("Password", type="password", value=default_password)
-        client_id = st.text_input("Client ID", value=default_client_id, disabled=True)
-        submit_auth = st.form_submit_button("🔓 Authenticate")
+# Main content (only shown when authenticated)
+st.success("✅ Authenticated")
 
-    if submit_auth:
-        if email and password and client_id:
-            with st.spinner('🔄 Authenticating...'):
-                token = get_token(email, password, client_id)
-            if token:
-                st.success("✅ Authenticated successfully!")
-                st.session_state.token = token
-                st.session_state.is_authenticated = True
-                st.balloons()
-                st.rerun()
-            else:
-                st.error("❌ Authentication failed. Please check your credentials.")
-        else:
-            st.error("⚠️ Please fill all the fields!")
+# Two columns layout
+col1, col2 = st.columns([1, 1])
 
-elif menu_option == "Image Validation":
-    st.title("🖼️ Brand Guidelines Image Validation")
+with col1:
+    st.subheader("📋 Configuration")
     
-    if not st.session_state.is_authenticated:
-        st.warning("⚠️ Please authenticate first in the Home section.")
-        st.stop()
+    # Brand name
+    brand_name = st.text_input(
+        "Brand Name",
+        value="slack",
+        help="Enter the brand name"
+    )
     
-    # Create two columns for layout
-    col1, col2 = st.columns([1, 1])
+    # Validation mode
+    use_vision = st.toggle("Use Vision-based Validation", value=True, help="Vision-based uses AI to directly analyze images. Turn off for text-based validation.")
     
-    with col1:
-        st.header("📋 Brand Guidelines")
-        
-        # Brand name input
-        brand_name = st.text_input(
-            "Brand Name",
-            placeholder="e.g., slack, coca-cola",
-            help="Enter the brand name. If guidelines are stored in S3, they will be fetched automatically."
-        )
-        
-        # Guidelines upload option
-        st.subheader("Upload Guidelines (Optional)")
-        st.info("💡 If you don't upload guidelines, the system will try to fetch them from S3 using the brand name.")
+    # Optional guidelines upload for text-based mode
+    if not use_vision:
         guidelines_file = st.file_uploader(
-            "Upload Brand Guidelines PDF",
+            "Upload Guidelines PDF",
             type=['pdf'],
-            help="Upload a PDF containing the brand guidelines"
+            help="Required for text-based validation"
         )
-        
         guidelines_text = None
         if guidelines_file:
-            with st.spinner("📖 Extracting text from PDF..."):
+            with st.spinner("Reading PDF..."):
                 guidelines_text = extract_pdf_text(guidelines_file)
             if guidelines_text:
-                st.success(f"✅ Successfully extracted {len(guidelines_text)} pages from PDF")
-                with st.expander("📄 Preview Guidelines Text"):
-                    preview_text = "\n\n".join(guidelines_text[:2])  # Show first 2 pages
-                    st.text_area("First 2 pages:", preview_text, height=200)
-    
-    with col2:
-        st.header("🎨 Image to Validate")
-        
-        # Image upload
-        image_file = st.file_uploader(
-            "Upload Playable Image",
-            type=['png', 'jpg', 'jpeg'],
-            help="Upload an image to validate against brand guidelines"
-        )
-        
-        if image_file:
-            st.image(image_file, caption="Uploaded Image", use_container_width=True)
-    
-    st.divider()
-    
-    # Validation options
-    st.header("⚙️ Validation Settings")
-    col_settings1, col_settings2 = st.columns(2)
-    
-    with col_settings1:
-        validation_mode = st.radio(
-            "Validation Mode",
-            ["Vision-based (AI Vision)", "Text-based (Guidelines Text)"],
-            help="Vision-based: Uses AI to directly analyze the image. Text-based: Uses extracted text from guidelines."
-        )
-        use_vision = validation_mode.startswith("Vision")
-    
-    with col_settings2:
-        user_name = st.text_input(
-            "User Name (Optional)",
-            placeholder="Your name",
-            help="Optional: Add your name for tracking purposes"
-        )
-    
-    st.divider()
-    
-    # Validate button
-    if st.button("🚀 Validate Image", type="primary", use_container_width=True):
-        if not brand_name:
-            st.error("⚠️ Please enter a brand name!")
-        elif not image_file:
-            st.error("⚠️ Please upload an image to validate!")
-        elif not use_vision and not guidelines_text:
-            st.warning("⚠️ Text-based validation requires guidelines to be uploaded. Using Vision-based validation instead...")
-            use_vision = True
-        
-        if brand_name and image_file:
-            with st.spinner('🔍 Validating image...'):
-                # Reset file pointer
-                image_file.seek(0)
-                
-                # Encode image to base64
-                image_b64 = encode_image_to_base64(image_file)
-                
-                if image_b64:
-                    # Perform validation
-                    result = validate_image(
-                        token=st.session_state.token,
-                        image_b64=image_b64,
-                        brand=brand_name,
-                        guidelines=guidelines_text if not use_vision else None,
-                        vision=use_vision,
-                        user=user_name
-                    )
-                    
-                    if result:
-                        st.divider()
-                        st.header("📊 Validation Results")
-                        
-                        # Display results
-                        compliant = result.get('compliant', False)
-                        reasons = result.get('reasons', [])
-                        
-                        if compliant:
-                            st.success("✅ **IMAGE IS COMPLIANT** with brand guidelines!")
-                            st.balloons()
-                        else:
-                            st.error("❌ **IMAGE IS NOT COMPLIANT** with brand guidelines")
-                        
-                        # Display reasons if any
-                        if reasons and len(reasons) > 0:
-                            st.subheader("📝 Detailed Reasons:")
-                            for i, reason in enumerate(reasons, 1):
-                                st.warning(f"{i}. {reason}")
-                        elif not compliant:
-                            st.info("No specific reasons provided.")
-                        
-                        # Show raw JSON response
-                        with st.expander("🔍 View Raw JSON Response"):
-                            st.json(result)
-                        
-                        # Download results option
-                        st.divider()
-                        result_json = json.dumps(result, indent=2)
-                        st.download_button(
-                            label="💾 Download Results as JSON",
-                            data=result_json,
-                            file_name=f"validation_results_{brand_name}.json",
-                            mime="application/json"
-                        )
+                st.success(f"✅ Extracted {len(guidelines_text)} pages")
 
-# Footer
+with col2:
+    st.subheader("🖼️ Upload Image")
+    
+    # Image upload
+    image_file = st.file_uploader(
+        "Select playable image",
+        type=['png', 'jpg', 'jpeg'],
+        label_visibility="collapsed"
+    )
+    
+    if image_file:
+        st.image(image_file, use_container_width=True)
+
 st.divider()
-st.markdown("""
-<div style='text-align: center; color: gray; padding: 20px;'>
-    <small>Brand Guidelines Validator | Powered by OpenAI & Craftsman+</small>
-</div>
-""", unsafe_allow_html=True)
+
+# Validate button
+if st.button("🚀 Validate Image", type="primary", use_container_width=True, disabled=not image_file):
+    if not image_file:
+        st.error("Please upload an image")
+    elif not use_vision and not guidelines_text:
+        st.error("Text-based validation requires guidelines PDF")
+    else:
+        with st.spinner('🔍 Validating...'):
+            image_file.seek(0)
+            image_b64 = encode_image_to_base64(image_file)
+            
+            if image_b64:
+                result = validate_image(
+                    token=st.session_state.token,
+                    image_b64=image_b64,
+                    brand=brand_name,
+                    guidelines=guidelines_text if not use_vision else None,
+                    vision=use_vision,
+                    user=""
+                )
+                
+                if result:
+                    st.divider()
+                    
+                    # Display results
+                    compliant = result.get('compliant', False)
+                    compliance = result.get('compliance')
+                    reasons = result.get('reasons', [])
+                    
+                    # Show compliance status
+                    if compliance is not None:
+                        st.metric("Compliance Score", f"{compliance}%")
+                    
+                    if compliant:
+                        st.success("✅ Image is compliant with brand guidelines")
+                        st.balloons()
+                    else:
+                        st.error("❌ Image is not compliant")
+                    
+                    # Display reasons
+                    if reasons and len(reasons) > 0:
+                        st.subheader("Issues Found:")
+                        for i, reason in enumerate(reasons, 1):
+                            st.warning(f"{i}. {reason}")
+                    
+                    # Raw JSON in expander
+                    with st.expander("View Raw Response"):
+                        st.json(result)
+                    
+                    # Download button
+                    result_json = json.dumps(result, indent=2)
+                    st.download_button(
+                        label="💾 Download Results",
+                        data=result_json,
+                        file_name=f"validation_{brand_name}.json",
+                        mime="application/json"
+                    )
 
